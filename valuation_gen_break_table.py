@@ -4,78 +4,88 @@ import scipy.stats as stats
 import math
 
 def generate_break_table(df):
-    # Group by 'Seniority' and sum
-    df_grouped = df.groupby("Seniority").sum().reset_index()
+    # Step 1: Generate unique seniority levels and create preference_base_payout DataFrame
+    unique_seniority = np.array(df["Seniority"].dropna().unique().astype(int))
+    preference_base_payout = pd.DataFrame(index=range(len(unique_seniority)), columns=df["Security"].to_list())
 
-    # Create an empty break_table with columns based on 'Security'
-    break_table = pd.DataFrame(columns=df_grouped["Security"].to_list())
+    # Step 2: Fill the preference_base_payout DataFrame
+    for i in range(len(preference_base_payout)):
+        for j in range(len(df)):
+            if not pd.isna(df["Seniority"][j]) and int(df["Seniority"][j]) == i + 1:
+                preference_base_payout[df["Security"][j]][i] = df["Shares Outstanding"][j] * df["Issue Price (USD)"][j] * df["Liquidation Preference"][j]
 
-    # Populate break_table with calculated values
-    for i in range(len(df_grouped)):
-        break_table.loc[i, df_grouped["Security"][i]] = int(df_grouped["Shares Outstanding"][i] * df_grouped["Issue Price (USD)"][i])
+    # Step 3: Create rest_payout DataFrame
+    rest_payout = pd.DataFrame(columns=df["Security"].to_list())
+    df_price_sort = df.sort_values(by='Issue Price (USD)', ascending=True).reset_index(drop=True)
 
-    k = len(df_grouped)
-    h = 0
-    for i in range(k, k * 2 + 1, 1):
-        h += 1
-        for j in range(k-1, k-h, -1):
-            if (k-h) > -1:
-                break_table.loc[i, df_grouped["Security"][j]] = int(df_grouped["Shares Outstanding"][j] * 
-                                                                    (df_grouped["Issue Price (USD)"][k-h+1] - df_grouped["Issue Price (USD)"][k-h]) * -1)
+    # Step 4: Fill the rest_payout DataFrame
+    for i in range(len(df_price_sort) - 1):
+        for j in range(len(df_price_sort["Security"])):
+            security = df_price_sort["Security"][j]
+            shares_outstanding = df_price_sort["Shares Outstanding"].loc[df_price_sort["Security"] == security].values[0]
+            price_diff = df_price_sort["Issue Price (USD)"].iloc[i+1] - df_price_sort["Issue Price (USD)"].iloc[i]
+            
+            if df_price_sort["Participating"].loc[df_price_sort["Security"] == security].values[0] != "No":
+                rest_payout.loc[i, security] = shares_outstanding * price_diff
+            else:
+                if i < j:
+                    rest_payout.loc[i, security] = 0
+                else:
+                    rest_payout.loc[i, security] = shares_outstanding * price_diff
 
-    # Fill NaN with 0
-    break_table = break_table.fillna(0)
-
+    # Step 5: Combine preference_base_payout and rest_payout
+    break_table = pd.concat([preference_base_payout, rest_payout], axis=0, ignore_index=True)
+    
     # Remove rows with all zeros
     break_table = break_table[(break_table.T != 0).any()]
 
     # Reset index
     break_table = break_table.reset_index(drop=True)
 
-    # Add a 'Total' column
+    # Step 6: Add a 'Total' column
+    break_table = break_table.fillna(0)
     break_table['Total'] = break_table.sum(axis=1)
 
-    # Add a total row
+    # Step 7: Add a total row
     totals = break_table.sum()
     break_table.loc[len(break_table)] = totals
 
-    # Calculate 'Aggregate Value' and add 'Break Point From' and 'Break Point To' columns
+    # Step 8: Calculate 'Aggregate Value' and add 'Break Point From' and 'Break Point To' columns
     break_table['Aggregate Value'] = break_table['Total'].cumsum()
     break_table["Break Point From"] = break_table["Aggregate Value"].shift(1).fillna(0)
     break_table["Break Point To"] = break_table["Aggregate Value"]
 
-    # Move 'Break Point From' and 'Break Point To' to the left
+    # Step 9: Reorder columns and drop 'Aggregate Value'
     columns_to_move = ['Break Point From', 'Break Point To']
     all_columns = break_table.columns.tolist()
     new_order = columns_to_move + [col for col in all_columns if col not in columns_to_move]
     break_table = break_table[new_order]
-
-    # Drop 'Aggregate Value' column
     break_table = break_table.drop(["Aggregate Value"], axis=1)
 
-    # Set the last 'Break Point To' to 'up to'
+    # Step 10: Set the last 'Break Point To' to 'and up'
     break_table.loc[break_table.index[-1], 'Break Point To'] = "and up"
+
+    # Step 11: Format numbers with thousand separators
+    # break_table = break_table.applymap(lambda x: f"{x:,.0f}" if isinstance(x, (int, float)) else x)
 
     return break_table
 
 
 def generate_break_table_percent(df, break_table):
-    # Group the DataFrame by 'Seniority' and sum the columns
-    df_grouped = df.groupby("Seniority").sum().reset_index()
-    
+
     # Create a copy of the break table
     break_table_percent = break_table.copy()
 
     # Calculate the percentage values for each item in df_grouped['Security']
     for i in range(len(break_table_percent)):
-        for item in df_grouped["Security"]:
+        for item in df["Security"]:
             break_table_percent[item][i] = 100 * (break_table_percent[item][i] / break_table_percent["Total"][i])
 
     # Recalculate the 'Total' column in percentage terms
-    break_table_percent["Total"] = break_table_percent[df_grouped["Security"].to_list()].sum(axis=1)
+    break_table_percent["Total"] = break_table_percent[df["Security"].to_list()].sum(axis=1)
 
     # Round the percentages to 1 decimal place
-    break_table_percent[df_grouped["Security"].to_list()] = np.round(break_table_percent[df_grouped["Security"].to_list()], 1)
+    break_table_percent[df["Security"].to_list()] = np.round(break_table_percent[df["Security"].to_list()], 1)
 
     return break_table_percent
 
@@ -141,25 +151,22 @@ def generate_option_allocation_table(break_table, break_table_bs, break_table_pe
     break_table_oa = break_table[["Break Point From", "Break Point To"]].copy()
     break_table_oa["Option Value"] = break_table_bs["Incremental Value"]
 
-    # Group the input DataFrame by "Seniority" and sum the columns
-    df_grouped = df.groupby("Seniority").sum().reset_index()
+
 
     # Add columns for each security in the grouped DataFrame to break_table_oa and initialize with 0
-    security_list = df_grouped["Security"].to_list()
+    security_list = df["Security"].to_list()
     break_table_oa[security_list] = 0
 
-    # Populate the first set of values for each security in break_table_oa
-    for i in range(len(df_grouped)):
-        break_table_oa.loc[i, df_grouped["Security"][i]] = break_table_oa["Option Value"][i]
 
-    # Additional calculations to populate the rest of the option allocation
-    k = len(df_grouped)
-    h = 0
-    for i in range(k - 1, len(break_table_oa)):
-        h += 1
-        for j in range(k - 1, k - 1 - h, -1):
-            if (k - h) > -1:
-                break_table_oa.loc[i, df_grouped["Security"][j]] = break_table_oa["Option Value"][i] * break_table_percent.loc[i, df_grouped["Security"][j]] / 100
+    # Select the relevant columns from break_table_percent based on the grouped security names
+    selected_columns = df["Security"].to_list()
+    break_table_percent_selected = break_table_percent[selected_columns]
+
+    # Align the `Option Value` column for multiplication and normalize it
+    break_table_oa_selected = (break_table_oa[["Option Value"] * len(selected_columns)]) / 100
+
+    # Perform element-wise multiplication
+    break_table_oa[selected_columns] = break_table_percent_selected.mul(break_table_oa_selected.values, axis=0)
 
     # Calculate the total for each row
     break_table_oa["Total"] = break_table_oa[security_list].sum(axis=1)
@@ -174,11 +181,8 @@ def calculate_break_table_ds(break_table_bs, break_table_percent, df):
     break_table_ds["Incremental N(d1)"] = break_table_ds["N(d1)"] - break_table_ds["N(d1)"].shift(-1)
     break_table_ds["Incremental N(d1)"].fillna(break_table_ds["N(d1)"], inplace=True)
 
-    # Group the input DataFrame by "Seniority" and sum the columns
-    df_grouped = df.groupby("Seniority").sum().reset_index()
-
     # Select the relevant columns from break_table_percent based on the grouped security names
-    selected_columns = df_grouped["Security"].to_list()
+    selected_columns = df["Security"].to_list()
     break_table_percent_selected = break_table_percent[selected_columns]
 
     # Align the `Incremental N(d1)` column for multiplication and normalize it
@@ -193,11 +197,10 @@ def calculate_break_table_ds(break_table_bs, break_table_percent, df):
     return break_table_ds
 
 def calculate_estimated_volatility(df, break_table_ds, break_table_oa, equity_value, volatility):
-    # Group the input DataFrame by "Seniority" and sum the columns
-    df_grouped = df.groupby("Seniority").sum().reset_index()
+
 
     # Initialize the estimated_volatility DataFrame with the required indices and columns
-    security_list = df_grouped["Security"].to_list()
+    security_list = df["Security"].to_list()
     estimated_volatility = pd.DataFrame(index=["Weighted N(d1)", "S/Ki", "Aggregate Volatility", "Volatility for Each Class"],
                                         columns=security_list)
 
@@ -232,14 +235,12 @@ def calculate_estimated_DLOM(df, break_table_oa, estimated_volatility, time_to_l
         "DLOM (B/A)"
     ]
     
-    # Group the input DataFrame by "Seniority" and sum the columns
-    df_grouped = df.groupby("Seniority").sum().reset_index()
     
     # Initialize the estimated_DLOM DataFrame with the required indices and columns
-    estimated_DLOM = pd.DataFrame(index=index, columns=df_grouped["Security"].to_list())
+    estimated_DLOM = pd.DataFrame(index=index, columns=df["Security"].to_list())
     
     # Populate the estimated_DLOM DataFrame
-    estimated_DLOM.loc["Strike price / breakpoint"] = break_table_oa[df_grouped["Security"].to_list()].sum(axis=0)
+    estimated_DLOM.loc["Strike price / breakpoint"] = break_table_oa[df["Security"].to_list()].sum(axis=0)
     estimated_DLOM.loc["Spot price"] = estimated_DLOM.loc["Strike price / breakpoint"]
     estimated_DLOM.loc["Time to maturity"] = time_to_liquidity
     estimated_DLOM.loc["Dividends"] = dividend_yield
@@ -280,8 +281,7 @@ def calculate_estimated_DLOM(df, break_table_oa, estimated_volatility, time_to_l
     return estimated_DLOM
 
 def calculate_fair_value(df, break_table_oa):
-    # Group the input DataFrame by "Seniority" and sum the columns
-    df_grouped = df.groupby("Seniority").sum().reset_index()
+
 
     # Initialize the fair_value DataFrame with the required indices and columns
     fair_value = pd.DataFrame(index=[
@@ -290,13 +290,13 @@ def calculate_fair_value(df, break_table_oa):
         "Fair value per share",
         "Issue price per share",
         "% change"
-    ], columns=df_grouped["Security"].to_list())
+    ], columns=df["Security"].to_list())
 
     # Populate the fair_value DataFrame
-    fair_value.loc["Fair value of share class"] = break_table_oa[df_grouped["Security"].to_list()].sum(axis=0)
-    fair_value.loc["Number of shares"] = df_grouped["Shares Outstanding"].to_list()
+    fair_value.loc["Fair value of share class"] = break_table_oa[df["Security"].to_list()].sum(axis=0)
+    fair_value.loc["Number of shares"] = df["Shares Outstanding"].to_list()
     fair_value.loc["Fair value per share"] = fair_value.loc["Fair value of share class"] / fair_value.loc["Number of shares"]
-    fair_value.loc["Issue price per share"] = df_grouped["Issue Price (USD)"].to_list()
+    fair_value.loc["Issue price per share"] = df["Issue Price (USD)"].to_list()
 
     # Calculate % change only when the issue price per share is not zero
     fair_value.loc["% change"] = fair_value.apply(

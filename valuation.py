@@ -39,15 +39,15 @@ def valuation_page():
 
     # Initialize the data
     data = {
-        "Security": ["B2", "Series B", "Series A", "Series Seed", "ESOP", "Ordinaries"],
-        "Entry date": ["", "", "", "", "", ""],
-        "Shares Outstanding": [26023, 70202, 42970, 11760, 15442, 82684],
-        "Percentage": ["10.4%", "28.2%", "17.3%", "4.7%", "6.2%", "33.2%"],
-        "Seniority": [1, 2, 3, 4, 5, 5],
-        "Issue Price (USD)": [336.24, 321.83, 152.43, 42.52, 0.00, 0.00],
-        "Liquidation Preference": ["1.0x", "1.0x", "1.0x", "1.0x", "", ""],
-        "Participating": ["No", "No", "No", "No", "", ""],
-        "Dividend": ["0%", "0%", "0%", "0%", "", ""],
+        'Security': ['B2', 'Series B', 'Series A', 'Series Seed', 'ESOP', 'Ordinaries'],
+        'Entry date': ['', '', '', '', '', ''],
+        'Shares Outstanding': [26023, 70202, 42970, 11760, 15442, 82684],
+        'Percentage': ['10.4%', '28.2%', '17.3%', '4.7%', '6.2%', '33.2%'],
+        'Seniority': [1, 2, 3, 4,np.nan, np.nan],
+        'Issue Price (USD)': [336.24, 321.83, 152.43, 42.52, 0, 0],
+        'Liquidation Preference': [1, 1, 1, 1, np.nan, np.nan],
+        'Participating': ['No', 'No', 'No', 'No', '', ''],
+        'Dividend': ['0%', '0%', '0%', '0%', '', '']
     }
 
     df = pd.DataFrame(data)
@@ -90,13 +90,13 @@ def valuation_page():
     if st.button("Proceed"):
         with st.spinner("Processing... Please wait."):
             st.subheader("Final Edited Capitalization Table")
-            st.dataframe(st.session_state.df, use_container_width=True)
+            st.dataframe(st.session_state.df.applymap(lambda x: f"{x:,.0f}" if isinstance(x, (int, float)) else x), use_container_width=True)
 
             # Generate Break Table
             break_table = generate_break_table(st.session_state.df)
             st.session_state.break_table = break_table
             st.subheader("Generated Break Table")
-            st.dataframe(st.session_state.break_table, use_container_width=True)
+            st.dataframe(st.session_state.break_table.applymap(lambda x: f"{x:,.0f}" if isinstance(x, (int, float)) else x), use_container_width=True)
 
             # Generate Break Table Percentages
             break_table_percent = generate_break_table_percent(st.session_state.df, break_table)
@@ -115,7 +115,7 @@ def valuation_page():
             )
             st.session_state.break_table_bs = break_table_bs
             st.subheader("Generated Break Table Black-Scholes")
-            st.dataframe(st.session_state.break_table_bs, use_container_width=True)
+            st.dataframe(st.session_state.break_table_bs.applymap(lambda x: f"{x:,.2f}" if isinstance(x, (int, float)) and x < 1000 else (f"{x:,.0f}" if isinstance(x, (int, float)) else x)), use_container_width=True)
 
             # Generate Option Allocation Table
             break_table_oa = generate_option_allocation_table(
@@ -126,7 +126,7 @@ def valuation_page():
             )
             st.session_state.break_table_oa = break_table_oa
             st.subheader("Generated Option Allocation Table")
-            st.dataframe(st.session_state.break_table_oa, use_container_width=True)
+            st.dataframe(st.session_state.break_table_oa.applymap(lambda x: f"{x:,.2f}" if isinstance(x, (int, float)) and x < 1000 else (f"{x:,.0f}" if isinstance(x, (int, float)) else x)), use_container_width=True)
 
             # Calculate Delta Spread Table
             break_table_ds = calculate_break_table_ds(
@@ -161,7 +161,7 @@ def valuation_page():
             )
             st.session_state.estimated_DLOM = estimated_DLOM
             st.subheader("Estimated DLOM for Each Class")
-            st.dataframe(st.session_state.estimated_DLOM, use_container_width=True)
+            st.dataframe(st.session_state.estimated_DLOM.applymap(lambda x: f"{x:,.2f}" if isinstance(x, (int, float)) and x < 1000 else (f"{x:,.0f}" if isinstance(x, (int, float)) else x)), use_container_width=True)
 
             # Calculate Fair Value
             fair_value = calculate_fair_value(
@@ -170,7 +170,7 @@ def valuation_page():
             )
             st.session_state.fair_value = fair_value
             st.subheader("Calculated Fair Value")
-            st.dataframe(st.session_state.fair_value, use_container_width=True)
+            st.dataframe(st.session_state.fair_value.applymap(lambda x: f"{x:,.2f}" if isinstance(x, (int, float)) and x < 1000 else (f"{x:,.0f}" if isinstance(x, (int, float)) else x)), use_container_width=True)
 
 # To display the valuation page
 if __name__ == "__main__":
