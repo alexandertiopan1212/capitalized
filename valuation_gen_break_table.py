@@ -32,6 +32,11 @@ def generate_break_table(df):
                     rest_payout.loc[i, security] = 0
                 else:
                     rest_payout.loc[i, security] = shares_outstanding * price_diff
+    
+    no_participating_df = df_price_sort[df_price_sort["Participating"] == "No"]
+    max_price_row = no_participating_df["Issue Price (USD)"].idxmax()
+    
+    rest_payout = rest_payout[:max_price_row]
 
     # Step 5: Combine preference_base_payout and rest_payout
     break_table = pd.concat([preference_base_payout, rest_payout], axis=0, ignore_index=True)
@@ -41,6 +46,7 @@ def generate_break_table(df):
 
     # Reset index
     break_table = break_table.reset_index(drop=True)
+    
 
     # Step 6: Add a 'Total' column
     break_table = break_table.fillna(0)
@@ -66,7 +72,7 @@ def generate_break_table(df):
     break_table.loc[break_table.index[-1], 'Break Point To'] = "and up"
 
     # Step 11: Format numbers with thousand separators
-    # break_table = break_table.applymap(lambda x: f"{x:,.0f}" if isinstance(x, (int, float)) else x)
+    break_table = break_table.applymap(lambda x: f"{x:,.0f}" if isinstance(x, (int, float)) else x)
 
     return break_table
 
