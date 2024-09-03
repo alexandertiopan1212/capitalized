@@ -72,7 +72,7 @@ def generate_break_table(df):
     break_table.loc[break_table.index[-1], 'Break Point To'] = "and up"
 
     # Step 11: Format numbers with thousand separators
-    break_table = break_table.applymap(lambda x: f"{x:,.0f}" if isinstance(x, (int, float)) else x)
+    # break_table = break_table.applymap(lambda x: f"{x:,.0f}" if isinstance(x, (int, float)) else x)
 
     return break_table
 
