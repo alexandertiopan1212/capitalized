@@ -52,6 +52,13 @@ def main():
         st.session_state.page = 'equities'
         st.query_params.from_dict({'page': 'equities'})  # Update query params
 
+    def navigate_to_debt():
+        """
+        Switch the current page the debt page.
+        """
+        st.session_state.page = 'debt'
+        st.query_params.from_dict({'page': 'debt'})  # Update query params
+
     # Page routing logic based on session state
     if st.session_state.page == 'login':
         login_page(navigate_to_demo, navigate_to_dashboard)
@@ -67,6 +74,9 @@ def main():
 
     elif st.session_state.page == 'option':
         option_page()
+
+    elif st.session_state.page == 'debt':
+        debt_page()
 
 # Main application logic
 if __name__ == "__main__":
