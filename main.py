@@ -10,74 +10,70 @@ from administrator import administrator_page
 from guidelines import guidelines_page
 from settings import settings_page
 
-def main():
-
-    # Set full-width layout for the entire app
+# Modular navigation logic
+def set_page_config():
+    """
+    Configure the page layout and set default page if not in session state.
+    """
     st.set_page_config(layout="wide")
+    if "page" not in st.session_state:
+        query_params = st.query_params.to_dict()  # Access query params as a dictionary
+        st.session_state.page = query_params.get(
+            "page", "login"
+        )  # Default to 'login' if not set
 
-    # Initialize session state for page navigation if it doesn't already exist
-    if 'page' not in st.session_state:
-        query_params = st.query_params  # Access query params from URL
-        if 'page' in query_params:
-            st.session_state.page = query_params['page']
-        else:
-            st.session_state.page = 'login'  # Default to the login page
 
-    # Navigation functions to switch between pages
-    def navigate_to_demo():
-        """
-        Switch the current page to the demo page.
-        """
-        st.session_state.page = 'demo'
-        st.query_params.from_dict({'page': 'demo'})  # Update query params
+# Navigation functions
+def navigate(page_name):
+    """
+    Update session state and query parameters to navigate to the specified page.
+    """
+    st.session_state.page = page_name
+    st.query_params.from_dict({"page": page_name})  # Update the query parameters
 
-    def navigate_to_dashboard():
-        """
-        Switch the current page to the dashboard page.
-        """
-        st.session_state.page = 'dashboard'
-        st.query_params.from_dict({'page': 'dashboard'})  # Update query params
 
-    def navigate_to_login():
-        """
-        Switch the current page back to the login page.
-        """
-        st.session_state.page = 'login'
-        st.query_params.from_dict({'page': 'login'})  # Update query params
+# Function to route to appropriate page
+def route_page():
+    """
+    Render the appropriate page based on session state.
+    """
+    if st.session_state.page == "login":
+        login_page(lambda: navigate("demo"), lambda: navigate("dashboard"))
 
-    def navigate_to_equities():
-        """
-        Switch the current page the equities page.
-        """
-        st.session_state.page = 'equities'
-        st.query_params.from_dict({'page': 'equities'})  # Update query params
-
-    def navigate_to_debt():
-        """
-        Switch the current page the debt page.
-        """
-        st.session_state.page = 'debt'
-        st.query_params.from_dict({'page': 'debt'})  # Update query params
-
-    # Page routing logic based on session state
-    if st.session_state.page == 'login':
-        login_page(navigate_to_demo, navigate_to_dashboard)
-
-    elif st.session_state.page == 'dashboard':
+    elif st.session_state.page == "dashboard":
         dashboard_page()
 
-    elif st.session_state.page == 'demo':
-        demo_page(navigate_to_login)
+    elif st.session_state.page == "demo":
+        demo_page(lambda: navigate("login"))
 
-    elif st.session_state.page == 'equities':
+    elif st.session_state.page == "equities":
         equities_page()
 
-    elif st.session_state.page == 'option':
+    elif st.session_state.page == "option":
         option_page()
 
-    elif st.session_state.page == 'debt':
+    elif st.session_state.page == "debt":
         debt_page()
 
-# Main application logic
+    elif st.session_state.page == "portfolio":
+        portfolio_page()
+
+    elif st.session_state.page == "administrator":
+        administrator_page()
+
+    elif st.session_state.page == "guidelines":
+        guidelines_page()
+
+    elif st.session_state.page == "settings":
+        settings_page()
+
+
+# Main function
+def main():
+    set_page_config()
+    route_page()
+
+
+# Entry point
 if __name__ == "__main__":
     main()
