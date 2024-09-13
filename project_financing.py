@@ -29,11 +29,9 @@ from project_financing_function import (
 
 def create_financial_and_loan_simulation():
     st.title("Project Financing")
-
+    st.subheader("Input and Assumptions")
     # Timing Inputs Section
     with st.expander("Timing Inputs", expanded=True):
-        st.subheader("Timing Inputs")
-
         # Display inputs with labels and tooltips for clarity
         col1, col2 = st.columns([2, 2])
 
@@ -69,8 +67,6 @@ def create_financial_and_loan_simulation():
 
     # Financial Inputs Section
     with st.expander("Financial Inputs", expanded=False):
-        st.subheader("Financial Inputs")
-
         # Organize inputs in columns for better UI balance
         col1, col2 = st.columns([1, 1])
 
@@ -134,9 +130,7 @@ def create_financial_and_loan_simulation():
 
     # Loan & Tax Inputs Section
     with st.expander("Loan & Tax Inputs", expanded=False):
-        st.subheader("Loan & Tax Inputs")
-
-        # Organize inputs into 2 columns
+         # Organize inputs into 2 columns
         col1, col2 = st.columns([1, 1])
 
         with col1:
@@ -235,9 +229,14 @@ def create_financial_and_loan_simulation():
         else:
             st.success("Total drawdown percentages are valid and equal 100%.")
 
+    if 'run_simulation' not in st.session_state:
+        st.session_state.run_simulation = False
 
     # Prorate the drawdowns for each month based on the drawdown schedule frequency
-    if st.button("Run Simulation") and total_percentage == 100.0:
+    st.sidebar.subheader("Simulation")
+    if st.sidebar.button("Run Simulation") and total_percentage == 100.0:
+        st.subheader("Simulation Results")
+        st.session_state.run_simulation = True
 
         with st.expander("CAPEX Adjustment"):
             # Convert percentages to decimals
@@ -581,14 +580,20 @@ def create_financial_and_loan_simulation():
                 cash_flows=project_cashflow_new["Project Cashflow"].values,
                 frequency=timing_frequency,
             )
-            st.write(f"**Project IRR:** :green[{irr_project:.2f}%]")
+            if irr_project is not None:
+                st.write(f"**Project IRR:** :green[{irr_project:.2f}%]")
+            else:
+                st.write(f"**Unable to Calculate IRR Project**")
 
             # Calculate Payback Period
             pbp_project = calculate_payback_period(
                 cash_flows=project_cashflow_new["Project Cashflow"].values,
                 frequency=timing_frequency,
             )
-            st.write(f"**Project Payback Period:** :orange[{pbp_project:.2f} Years]")
+            if pbp_project is not None:
+                st.write(f"**Project Payback Period:** :orange[{pbp_project:.2f} Years]")
+            else:
+                st.write(f"**Project Not Payback**")
 
             plot_bar_chart(
                 project_cashflow_new,  # Your dataframe
@@ -627,7 +632,11 @@ def create_financial_and_loan_simulation():
                 cash_flows=equity_cashflow_new["Equity Cashflow"].values,
                 frequency=timing_frequency,
             )
-            st.write(f"**Equity IRR:** {irr_equity:.2f}%")
+
+            if irr_equity is not None:
+                st.write(f"**Equity IRR:** {irr_equity:.2f}%")
+            else:
+                st.write(f"**Unable to Calculate IRR Equity**")
 
             plot_bar_chart(
                 equity_cashflow_new,  # Your dataframe
@@ -635,6 +644,9 @@ def create_financial_and_loan_simulation():
                 x_axis_label="Time",  # Custom x-axis label
                 y_axis_label="Amount"  # Custom y-axis label
             )
+    else:
+        st.session_state.run_simulation = False
+
 
 
 def project_financing_page():
