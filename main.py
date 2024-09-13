@@ -5,6 +5,7 @@ from dashboard import dashboard_page
 from equities import equities_page
 from option import option_page
 from debt import debt_page
+from project_financing import project_financing_page
 from portfolio import portfolio_page
 from administrator import administrator_page
 from guidelines import guidelines_page
@@ -54,6 +55,9 @@ def route_page():
 
     elif st.session_state.page == "debt":
         debt_page()
+
+    elif st.session_state.page == "project_financing":
+        project_financing_page()
 
     elif st.session_state.page == "portfolio":
         portfolio_page()
