@@ -1,104 +1,70 @@
 import streamlit as st
 
 
+# Define custom CSS styles for the sidebar buttons
+def sidebar_button_style():
+    st.markdown("""
+        <style>
+        /* Set sidebar button styles */
+        .stButton button {
+            display: block;
+            padding: 10px;
+            margin: 0px; /* No margin between buttons */
+            width: 100%;
+            text-align: left;
+            background-color: transparent;
+            color: black;
+            font-size: 10px; /* Adjust the font size to match the sidebar menu */
+            font-family: 'Source Sans Pro', sans-serif; /* Match font family */
+            border: 1px solid #ddd; /* Border for buttons */
+            border-radius: 5px; /* Optional: round the edges */
+        }
+        .stButton button:hover {
+            background-color: #f0f0f0;
+            cursor: pointer;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
 def render_page_based_on_sidebar():
-    # st.set_page_config(layout="wide")  # Enable full-width layout for this page
-    # Sidebar for navigation
+    # Sidebar title
     st.sidebar.title("Capitalized")
 
-    # Sidebar options
-    sidebar_dashboard = st.sidebar.selectbox(
-        "Dashboard", ["Select Dashboard", "Dashboard"]
-    )
-    sidebar_valuation = st.sidebar.selectbox(
-        "Valuation", ["Select Valuation", "Equities", "Debt", "Option"]
-    )
-    sidebar_portfolio = st.sidebar.selectbox(
-        "Portfolio", ["Select Portfolio", "Portfolio"]
-    )
-    sidebar_others = st.sidebar.selectbox(
-        "Help & Settings",
-        ["Select Help & Settings", "Administrator", "Guidelines", "Settings"],
-    )
+    # Add CSS to style the buttons
+    sidebar_button_style()
 
-    # Conditional display based on the sidebar selections
-    if (
-        sidebar_dashboard == "Dashboard"
-        and sidebar_valuation == "Select Valuation"
-        and sidebar_portfolio == "Select Portfolio"
-        and sidebar_others == "Select Help & Settings"
-    ):
-        st.session_state.page = "dashboard"
-        st.query_params.from_dict({"page": "dashboard"})  # Update query params
+    # Expanders with styled buttons
+    with st.sidebar.expander("Dashboard", expanded=True):
+        if st.button("Dashboard", key="dashboard"):
+            st.session_state.page = "dashboard"
 
-    elif (
-        sidebar_valuation == "Equities"
-        and sidebar_dashboard == "Select Dashboard"
-        and sidebar_portfolio == "Select Portfolio"
-        and sidebar_others == "Select Help & Settings"
-    ):
-        st.session_state.page = "equities"
-        st.query_params.from_dict({"page": "equities"})  # Update query params
+    with st.sidebar.expander("Valuation", expanded=True):
+        if st.button("Equities Valuation", key="equities"):
+            st.session_state.page = "equities"
+        if st.button("Debt Valuation", key="debt"):
+            st.session_state.page = "debt"
+        if st.button("Option Valuation", key="option"):
+            st.session_state.page = "option"
 
-    elif (
-        sidebar_valuation == "Option"
-        and sidebar_dashboard == "Select Dashboard"
-        and sidebar_portfolio == "Select Portfolio"
-        and sidebar_others == "Select Help & Settings"
-    ):
-        st.session_state.page = "option"
-        st.query_params.from_dict({"page": "option"})  # Update query params
+    with st.sidebar.expander("Financial Modelling", expanded=True):
+        if st.button("Project Financing", key="project_financing"):
+            st.session_state.page = "project_financing"
 
-    elif (
-        sidebar_valuation == "Debt"
-        and sidebar_dashboard == "Select Dashboard"
-        and sidebar_portfolio == "Select Portfolio"
-        and sidebar_others == "Select Help & Settings"
-    ):
-        st.session_state.page = "debt"
-        st.query_params.from_dict({"page": "debt"})  # Update query params
+    with st.sidebar.expander("Portfolio", expanded=True):
+        if st.button("Portfolio", key="portfolio"):
+            st.session_state.page = "portfolio"
 
-    elif (
-        sidebar_portfolio == "Portfolio"
-        and sidebar_dashboard == "Select Dashboard"
-        and sidebar_valuation == "Select Valuation"
-        and sidebar_others == "Select Help & Settings"
-    ):
-        st.session_state.page = "portfolio"
-        st.query_params.from_dict({"page": "portfolio"})  # Update query params
+    with st.sidebar.expander("Help & Settings", expanded=False):
+        if st.button("Administrator", key="administrator"):
+            st.session_state.page = "administrator"
+        if st.button("Guidelines", key="guidelines"):
+            st.session_state.page = "guidelines"
+        if st.button("Settings", key="settings"):
+            st.session_state.page = "settings"
 
-    elif (
-        sidebar_others == "Administrator"
-        and sidebar_dashboard == "Select Dashboard"
-        and sidebar_valuation == "Select Valuation"
-        and sidebar_portfolio == "Select Portfolio"
-    ):
-        st.session_state.page = "administrator"
-        st.query_params.from_dict({"page": "administrator"})  # Update query params
-
-    elif (
-        sidebar_others == "Guidelines"
-        and sidebar_dashboard == "Select Dashboard"
-        and sidebar_valuation == "Select Valuation"
-        and sidebar_portfolio == "Select Portfolio"
-    ):
-        st.session_state.page = "guidelines"
-        st.query_params.from_dict({"page": "guidelines"})  # Update query params
-
-    elif (
-        sidebar_others == "Settings"
-        and sidebar_dashboard == "Select Dashboard"
-        and sidebar_valuation == "Select Valuation"
-        and sidebar_portfolio == "Select Portfolio"
-    ):
-        st.session_state.page = "settings"
-        st.query_params.from_dict({"page": "settings"})  # Update query params
-
-    else:
-        st.write(
-            "Please make a selection in one of the sidebar options to view the corresponding page."
-        )
-
+    # Render the content based on the selected page
+    if 'page' in st.session_state:
+        st.session_state.page == "login"
 
 # Main application logic
 if __name__ == "__main__":
