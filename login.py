@@ -70,13 +70,18 @@ def display_forgot_password_link():
 def handle_login(email, password, agree, navigate_to_dashboard):
     """
     Handle the login process when the user clicks the login button.
-    Checks if the terms are agreed upon, and if valid, logs in the user and redirects to the dashboard.
+    Checks if the email and password match the predefined credentials, if terms are agreed upon, and
+    if valid, logs in the user and redirects to the dashboard.
     """
     if not agree:
         st.warning("You must agree to the terms and conditions to log in.")
     else:
-        st.session_state.logged_in = True
-        navigate_to_dashboard()
+        # Check email and password
+        if email == "alexandertiopan1212@gmail.com" and password == "alexandertiopan":
+            st.session_state.logged_in = True
+            navigate_to_dashboard()
+        else:
+            st.error("Invalid email or password.")
 
 
 # Main logic for the login page
