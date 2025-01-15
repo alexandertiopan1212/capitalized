@@ -118,7 +118,7 @@ def generate_loan_amortization_df(
             "Beginning Balance": beginning_balances,
             "Principal Payment": principal_payments,
             "Interest Payment": interest_payments,
-            "Ending Balance": ending_balances
+            "Ending Balance": ending_balances,
         }
     )
 
@@ -145,7 +145,7 @@ def generate_financial_data_after_construction(
     initial_revenue,
     initial_op_cost,
     revenue_growth_rate,
-    op_cost_growth_rate
+    op_cost_growth_rate,
 ):
     total_months = total_years * 12
     total_construction_months = int(total_construction_months)
@@ -429,10 +429,12 @@ def create_cashflow_tables_compliant(
     for col in financial_df.columns:
         if col not in loan_df.columns:
             loan_df[col] = pd.NA  # Add missing columns with NaN values
-    
+
     for col in financial_df.columns:
         if col not in capex_drawdown_monthly_df.columns:
-            capex_drawdown_monthly_df[col] = pd.NA  # Add missing columns with NaN values
+            capex_drawdown_monthly_df[
+                col
+            ] = pd.NA  # Add missing columns with NaN values
 
     loan_df = loan_df.fillna(0)
     capex_drawdown_monthly_df = capex_drawdown_monthly_df.fillna(0)
@@ -443,7 +445,9 @@ def create_cashflow_tables_compliant(
     depreciation = financial_df.loc["Depreciation"].resample(frequency).sum()
     tax = taxation_df.loc["Income Tax (PPh)"].resample(frequency).sum()
     financing_cost = loan_df.loc["Interest Payment"].resample(frequency).sum()
-    total_fixed_asset = capex_drawdown_monthly_df.loc["New Capex Adjusted"].resample(frequency).sum()
+    total_fixed_asset = (
+        capex_drawdown_monthly_df.loc["New Capex Adjusted"].resample(frequency).sum()
+    )
 
     # Calculate Operational Cash Flow (without IDC)
     operational_cash_flow = (
@@ -469,7 +473,11 @@ def create_cashflow_tables_compliant(
     financing_cost_repayment = loan_df.loc["Interest Payment"].resample(frequency).sum()
 
     # Equity Injection: Spread equity injection over construction duration
-    capital_addition = capex_drawdown_monthly_df.loc["Monthly Drawdowns Equity"].resample(frequency).sum()
+    capital_addition = (
+        capex_drawdown_monthly_df.loc["Monthly Drawdowns Equity"]
+        .resample(frequency)
+        .sum()
+    )
 
     # Financing Cash Flow
     financing_cash_flow = (
@@ -509,10 +517,7 @@ def create_cashflow_tables_compliant(
     ).T
 
     cashflow_summary_df = pd.DataFrame(
-        {
-            "Cash Change": cash_change, 
-            "End Balance Cash": end_balance_cash
-            }
+        {"Cash Change": cash_change, "End Balance Cash": end_balance_cash}
     ).T
 
     return (
@@ -547,7 +552,9 @@ def create_balance_sheet(
 
     for col in financial_df.columns:
         if col not in capex_drawdown_monthly_df.columns:
-            capex_drawdown_monthly_df[col] = pd.NA  # Add missing columns with NaN values
+            capex_drawdown_monthly_df[
+                col
+            ] = pd.NA  # Add missing columns with NaN values
 
     capex_drawdown_monthly_df = capex_drawdown_monthly_df.fillna(0)
 
@@ -570,7 +577,9 @@ def create_balance_sheet(
     dates = pd.to_datetime(financial_df.columns)
 
     # Resample CAPEX and Depreciation based on frequency
-    capex = capex_drawdown_monthly_df.loc["New Capex Adjusted"].resample(frequency).sum()
+    capex = (
+        capex_drawdown_monthly_df.loc["New Capex Adjusted"].resample(frequency).sum()
+    )
 
     depreciation = financial_df.loc["Depreciation"].resample(frequency).sum()
 
@@ -650,61 +659,61 @@ def create_balance_sheet(
 def aggregate_cash_flows_to_annual(cash_flows, frequency):
     """
     Aggregate cash flows to annual cash flows based on the frequency.
-    
+
     Args:
         cash_flows (list): List of cash flows (input frequency).
         frequency (str): Frequency of the cash flows ("Monthly", "Quarterly", "Semi-Annually", "Annually").
-    
+
     Returns:
         list: Aggregated cash flows to annual periods.
     """
     # Add support for semi-annual frequency
     freq_map = {"Monthly": 12, "Quarterly": 4, "Semi-Annually": 2, "Annually": 1}
     periods_per_year = freq_map.get(frequency, 1)
-    
+
     if periods_per_year == 1:
         # If the cash flows are already annual, no need to aggregate
         return cash_flows
-    
+
     # Aggregate the cash flows by summing over the periods_per_year
     aggregated_cash_flows = []
     for i in range(0, len(cash_flows), periods_per_year):
         annual_cash_flow = sum(cash_flows[i : i + periods_per_year])
         aggregated_cash_flows.append(annual_cash_flow)
-    
+
     return aggregated_cash_flows
 
 
 def calculate_irr(cash_flows, frequency="Annually"):
     """
     Calculate the IRR (Internal Rate of Return) for a series of cash flows.
-    
+
     Args:
         cash_flows (list): List of cash flows, where the first value is the initial investment (negative value),
                            and subsequent values are future cash inflows.
         frequency (str): The frequency of the cash flows ("Monthly", "Quarterly", "Annually").
-    
+
     Returns:
         float: The IRR for the given cash flows (annualized).
     """
     # First, aggregate the cash flows to annual cash flows
     annual_cash_flows = aggregate_cash_flows_to_annual(cash_flows, frequency)
-    
+
     # Define the NPV function with an adjustable rate
     def npv_with_rate(rate):
         return sum(cf / (1 + rate) ** t for t, cf in enumerate(annual_cash_flows))
-    
+
     # Use the Newton method from scipy to solve for IRR where NPV is 0
     try:
         # Initial guess for IRR is 10% (0.1)
         irr = newton(npv_with_rate, 0.1)
-        
+
         # Since the cash flows are aggregated to annual already, we can directly return the IRR
         return irr * 100  # Convert to percentage
     except RuntimeError as e:
         print("Error calculating IRR:", e)
         return None
-    
+
 
 def calculate_payback_period(cash_flows, frequency="Annually"):
     """
@@ -732,15 +741,13 @@ def calculate_payback_period(cash_flows, frequency="Annually"):
     return None
 
 
-def calculate_project_cashflow(
-        financial_df, 
-        taxation_df,
-        capex_drawdown_monthly_df
-        ):
-    
+def calculate_project_cashflow(financial_df, taxation_df, capex_drawdown_monthly_df):
+
     for col in financial_df.columns:
         if col not in capex_drawdown_monthly_df.columns:
-            capex_drawdown_monthly_df[col] = pd.NA  # Add missing columns with NaN values
+            capex_drawdown_monthly_df[
+                col
+            ] = pd.NA  # Add missing columns with NaN values
 
     capex_drawdown_monthly_df = capex_drawdown_monthly_df.fillna(0)
 
@@ -761,18 +768,18 @@ def calculate_project_cashflow(
 
 
 def calculate_equity_cashflow(
-        financial_df, 
-        taxation_df, 
-        loan_df,
-        capex_drawdown_monthly_df):
-    
+    financial_df, taxation_df, loan_df, capex_drawdown_monthly_df
+):
+
     for col in financial_df.columns:
         if col not in loan_df.columns:
             loan_df[col] = pd.NA  # Add missing columns with NaN values
 
     for col in financial_df.columns:
         if col not in capex_drawdown_monthly_df.columns:
-            capex_drawdown_monthly_df[col] = pd.NA  # Add missing columns with NaN values
+            capex_drawdown_monthly_df[
+                col
+            ] = pd.NA  # Add missing columns with NaN values
 
     capex_drawdown_monthly_df = capex_drawdown_monthly_df.fillna(0)
 
@@ -786,9 +793,7 @@ def calculate_equity_cashflow(
     net_income = revenue - operational_cost - financing_cost - tax
 
     total_capex = capex_drawdown_monthly_df.loc["New Capex Adjusted"]
-    equity_cashflow = (
-        net_income + depreciation - principal_payment - total_capex
-    )
+    equity_cashflow = net_income + depreciation - principal_payment - total_capex
     return pd.DataFrame(
         {
             "Revenue": revenue,
@@ -831,11 +836,12 @@ def calculate_npv(discount_rate, cash_flows, timing_frequency="Annually"):
     for t in range(len(cash_flows)):
         npv += cash_flows[t] / (1 + adjusted_discount_rate) ** t
         # print(
-            # f"Cash flow at time {t}: {cash_flows[t]}, Discounted: {cash_flows[t] / (1 + adjusted_discount_rate) ** t}"
+        # f"Cash flow at time {t}: {cash_flows[t]}, Discounted: {cash_flows[t] / (1 + adjusted_discount_rate) ** t}"
         # )
     return npv
 
-def plot_bar_chart(dataframe, variables, x_axis_label='Time', y_axis_label='Amount'):
+
+def plot_bar_chart(dataframe, variables, x_axis_label="Time", y_axis_label="Amount"):
     """
     Function to plot a bar chart with Plotly, with no decimals in values and the legend below the graph.
 
@@ -854,13 +860,13 @@ def plot_bar_chart(dataframe, variables, x_axis_label='Time', y_axis_label='Amou
         x=dataframe.index,  # X-axis is the index of the dataframe
         y=variables,  # Y-axis uses the specified columns
         text_auto=True,  # Automatically show values
-        labels={'index': x_axis_label, 'value': y_axis_label}  # Custom labels
+        labels={"index": x_axis_label, "value": y_axis_label},  # Custom labels
     )
 
     # Manually set the text and ensure no decimals
     fig.update_traces(
-        texttemplate='%{y:.0f}',  # No decimals in the text
-        textposition='auto'  # Position the text inside the bars
+        texttemplate="%{y:.0f}",  # No decimals in the text
+        textposition="auto",  # Position the text inside the bars
     )
 
     # Configure the layout
@@ -870,9 +876,9 @@ def plot_bar_chart(dataframe, variables, x_axis_label='Time', y_axis_label='Amou
             yanchor="bottom",
             y=-0.3,  # Position the legend below the chart
             xanchor="center",
-            x=0.5  # Center the legend horizontally
+            x=0.5,  # Center the legend horizontally
         ),
-        legend_title_text=None  # Remove the legend title
+        legend_title_text=None,  # Remove the legend title
     )
 
     # Display the chart

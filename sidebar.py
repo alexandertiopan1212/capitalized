@@ -34,11 +34,11 @@ def render_page_based_on_sidebar():
     sidebar_button_style()
 
     # Expanders with styled buttons
-    with st.sidebar.expander("Dashboard", expanded=True):
+    with st.sidebar.expander("Dashboard"):
         if st.button("Dashboard", key="dashboard"):
             st.session_state.page = "dashboard"
 
-    with st.sidebar.expander("Valuation", expanded=True):
+    with st.sidebar.expander("Valuation"):
         if st.button("Equities Valuation", key="equities"):
             st.session_state.page = "equities"
         if st.button("Debt Valuation", key="debt"):
@@ -46,15 +46,21 @@ def render_page_based_on_sidebar():
         if st.button("Option Valuation", key="option"):
             st.session_state.page = "option"
 
-    with st.sidebar.expander("Financial Modelling", expanded=True):
+    with st.sidebar.expander("Financial Modelling"):
         if st.button("Project Financing", key="project_financing"):
             st.session_state.page = "project_financing"
+        if st.button("Scenario Analysis", key="scenario_analysis"):
+            st.session_state.page = "scenario_analysis"
 
-    with st.sidebar.expander("Portfolio", expanded=True):
+    with st.sidebar.expander("Portfolio"):
         if st.button("Portfolio", key="portfolio"):
             st.session_state.page = "portfolio"
 
-    with st.sidebar.expander("Help & Settings", expanded=False):
+    with st.sidebar.expander("Decision Flow"):
+        if st.button("Decision Flow", key="decision_flow"):
+            st.session_state.page = "decision_flow"
+
+    with st.sidebar.expander("Help & Settings"):
         if st.button("Administrator", key="administrator"):
             st.session_state.page = "administrator"
         if st.button("Guidelines", key="guidelines"):

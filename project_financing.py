@@ -21,168 +21,147 @@ from project_financing_function import (
     calculate_npv,
     calculate_irr,
     calculate_payback_period,
-    plot_bar_chart
+    plot_bar_chart,
 )
-
-
 
 
 def create_financial_and_loan_simulation():
     st.title("Project Financing")
-    st.subheader("Input and Assumptions")
-    # Timing Inputs Section
-    with st.expander("Timing Inputs", expanded=True):
-        # Display inputs with labels and tooltips for clarity
-        col1, col2 = st.columns([2, 2])
+    # Sidebar section
+    st.sidebar.subheader("Input and Assumptions")
 
-        with col1:
-            num_years = st.number_input(
-                "Number of Years",
-                min_value=1,
-                max_value=50,
-                value=10,
-                help="The total duration of the project in years.",
-            )
-            start_date = st.date_input(
-                "Start Date",
-                value=datetime.today(),
-                help="Select the start date for the project.",
-            )
+    # Timing Inputs Section in the sidebar
+    with st.sidebar.expander("Timing Inputs", expanded=True):
+        num_years = st.number_input(
+            "Number of Years",
+            min_value=1,
+            max_value=50,
+            value=10,
+            help="The total duration of the project in years.",
+        )
+        start_date = st.date_input(
+            "Start Date",
+            value=datetime.today(),
+            help="Select the start date for the project.",
+        )
+        construction_duration_years = st.number_input(
+            "Construction Duration (Years)",
+            min_value=0.0,
+            value=2.0,
+            help="Duration of the construction phase in years.",
+        )
+        timing_frequency = st.selectbox(
+            "Timing Frequency",
+            options=["Monthly", "Quarterly", "Semi-Annually", "Annually"],
+            help="Choose how frequently financial data will be calculated.",
+        )
 
-        with col2:
-            construction_duration_years = st.number_input(
-                "Construction Duration (Years)",
-                min_value=0.0,
-                value=2.0,
-                help="Duration of the construction phase in years.",
-            )
-            timing_frequency = st.selectbox(
-                "Timing Frequency",
-                options=["Monthly", "Quarterly", "Semi-Annually", "Annually"],
-                help="Choose how frequently financial data will be calculated.",
-            )
+    # Financial Inputs Section in the sidebar
+    with st.sidebar.expander("Financial Inputs", expanded=False):
+        initial_revenue = st.number_input(
+            "Initial Revenue",
+            min_value=0.0,
+            value=10000.0,
+            step=1000.0,
+            help="The starting revenue amount for the project.",
+        )
+        initial_growth_rate = st.number_input(
+            "Annual Growth Rate for Revenue (%)",
+            min_value=-100.0,
+            value=5.0,
+            step=0.1,
+            help="Expected annual revenue growth rate in percentage.",
+        )
+        total_capex = st.number_input(
+            "CAPEX (Capital Expenditure)",
+            min_value=0.0,
+            value=50000.0,
+            step=1000.0,
+            help="Total capital expenditure for the project.",
+        )
+        discount_rate = st.number_input(
+            "Discount Rate (%)",
+            min_value=0.0,
+            value=8.0,
+            step=0.1,
+            help="Discount rate used for NPV calculation.",
+        )
+        initial_op_cost = st.number_input(
+            "Initial Operational Cost",
+            min_value=0.0,
+            value=5000.0,
+            step=500.0,
+            help="Initial operational cost at the start of the project.",
+        )
+        initial_op_cost_growth_rate = st.number_input(
+            "Annual Growth Rate for Operational Cost (%)",
+            min_value=-100.0,
+            value=3.0,
+            step=0.1,
+            help="Expected annual growth rate of operational costs.",
+        )
+        sell_fixed_assets = st.number_input(
+            "Sell Fixed Assets",
+            min_value=0.0,
+            value=0.0,
+            help="Amount expected from selling fixed assets during the project.",
+        )
+        useful_life_years = st.number_input(
+            "Useful Life of Assets (in years)",
+            min_value=1,
+            value=5,
+            help="Expected useful life of assets in years.",
+        )
 
-        # Calculate total construction months
-        total_construction_months = int(construction_duration_years * 12)
-
-    # Financial Inputs Section
-    with st.expander("Financial Inputs", expanded=False):
-        # Organize inputs in columns for better UI balance
-        col1, col2 = st.columns([1, 1])
-
-        with col1:
-            initial_revenue = st.number_input(
-                "Initial Revenue",
-                min_value=0.0,
-                value=10000.0,
-                step=1000.0,
-                help="The starting revenue amount for the project.",
-            )
-            initial_growth_rate = st.number_input(
-                "Annual Growth Rate for Revenue (%)",
-                min_value=-100.0,
-                value=5.0,
-                step=0.1,
-                help="Expected annual revenue growth rate in percentage.",
-            )
-            total_capex = st.number_input(
-                "CAPEX (Capital Expenditure)",
-                min_value=0.0,
-                value=50000.0,
-                step=1000.0,
-                help="Total capital expenditure for the project.",
-            )
-            discount_rate = st.number_input(
-                "Discount Rate (%)",
-                min_value=0.0,
-                value=8.0,
-                step=0.1,
-                help="Discount rate used for NPV calculation.",
-            )
-
-        with col2:
-            initial_op_cost = st.number_input(
-                "Initial Operational Cost",
-                min_value=0.0,
-                value=5000.0,
-                step=500.0,
-                help="Initial operational cost at the start of the project.",
-            )
-            initial_op_cost_growth_rate = st.number_input(
-                "Annual Growth Rate for Operational Cost (%)",
-                min_value=-100.0,
-                value=3.0,
-                step=0.1,
-                help="Expected annual growth rate of operational costs.",
-            )
-            sell_fixed_assets = st.number_input(
-                "Sell Fixed Assets",
-                min_value=0.0,
-                value=0.0,
-                help="Amount expected from selling fixed assets during the project.",
-            )
-            useful_life_years = st.number_input(
-                "Useful Life of Assets (in years)",
-                min_value=1,
-                value=5,
-                help="Expected useful life of assets in years.",
-            )
-
-    # Loan & Tax Inputs Section
-    with st.expander("Loan & Tax Inputs", expanded=False):
-         # Organize inputs into 2 columns
-        col1, col2 = st.columns([1, 1])
-
-        with col1:
-            equity_percentage = st.number_input(
-                "Equity Injection Percentage (%)",
-                min_value=0.0,
-                max_value=100.0,
-                value=30.0,
-                step=0.1,
-                help="Percentage of equity injected into the project.",
-            )
-            interest_rate = st.number_input(
-                "Interest Rate (%)",
-                min_value=0.0,
-                value=5.0,
-                step=0.1,
-                help="Annual interest rate for the loan.",
-            )
-            bank_provision_percentage = st.number_input(
-                "Bank Provision Percentage (%)",
-                min_value=0.0,
-                max_value=100.0,
-                value=1.0,
-                step=0.1,
-                help="Provision fee as a percentage of the loan amount.",
-            )
-
-        with col2:
-            tenor_years = st.number_input(
-                "Loan Tenor (in years)",
-                min_value=1,
-                value=5,
-                help="Loan repayment duration in years.",
-            )
-            grace_period_years = st.number_input(
-                "Grace Period (in years)",
-                min_value=0,
-                value=2,
-                help="Duration of the grace period before loan repayment starts.",
-            )
-            tax_rate = st.number_input(
-                "Tax Rate (%)",
-                min_value=0.0,
-                value=22.0,
-                step=0.1,
-                help="Tax rate applied on profits.",
-            )
-            repayment_mechanism = st.selectbox(
-                "Repayment Mechanism",
-                options=["Equal Installments", "Equal Principal"],
-                help="Choose the loan repayment method.",
-            )
+    # Loan & Tax Inputs Section in the sidebar
+    with st.sidebar.expander("Loan & Tax Inputs", expanded=False):
+        equity_percentage = st.number_input(
+            "Equity Injection Percentage (%)",
+            min_value=0.0,
+            max_value=100.0,
+            value=30.0,
+            step=0.1,
+            help="Percentage of equity injected into the project.",
+        )
+        interest_rate = st.number_input(
+            "Interest Rate (%)",
+            min_value=0.0,
+            value=5.0,
+            step=0.1,
+            help="Annual interest rate for the loan.",
+        )
+        bank_provision_percentage = st.number_input(
+            "Bank Provision Percentage (%)",
+            min_value=0.0,
+            max_value=100.0,
+            value=1.0,
+            step=0.1,
+            help="Provision fee as a percentage of the loan amount.",
+        )
+        tenor_years = st.number_input(
+            "Loan Tenor (in years)",
+            min_value=1,
+            value=5,
+            help="Loan repayment duration in years.",
+        )
+        grace_period_years = st.number_input(
+            "Grace Period (in years)",
+            min_value=0,
+            value=2,
+            help="Duration of the grace period before loan repayment starts.",
+        )
+        tax_rate = st.number_input(
+            "Tax Rate (%)",
+            min_value=0.0,
+            value=22.0,
+            step=0.1,
+            help="Tax rate applied on profits.",
+        )
+        repayment_mechanism = st.selectbox(
+            "Repayment Mechanism",
+            options=["Equal Installments", "Equal Principal"],
+            help="Choose the loan repayment method.",
+        )
 
     # Define frequency to months mapping
     frequency_to_months = {
@@ -193,6 +172,7 @@ def create_financial_and_loan_simulation():
     }
 
     # Add the second frequency input for the drawdown schedule
+    total_construction_months = int(construction_duration_years) * 12
 
     equity_capex = equity_percentage * total_capex / 100
     loan_capex = total_capex - equity_capex
@@ -202,6 +182,7 @@ def create_financial_and_loan_simulation():
         drawdown_frequency = st.selectbox(
             "Select Drawdown Schedule Frequency",
             options=["Monthly", "Quarterly", "Semi-Annually", "Annually"],
+            # value="Monthly",
             help="Choose the frequency at which the CAPEX drawdown will occur.",
         )
 
@@ -229,12 +210,7 @@ def create_financial_and_loan_simulation():
         else:
             st.success("Total drawdown percentages are valid and equal 100%.")
 
-    if 'run_simulation' not in st.session_state:
-        st.session_state.run_simulation = False
-
-    # Prorate the drawdowns for each month based on the drawdown schedule frequency
-    st.sidebar.subheader("Simulation")
-    if st.sidebar.button("Run Simulation") and total_percentage == 100.0:
+    if total_percentage == 100.0:
         st.subheader("Simulation Results")
         st.session_state.run_simulation = True
 
@@ -305,9 +281,12 @@ def create_financial_and_loan_simulation():
 
             plot_bar_chart(
                 capex_drowdown_new,  # Your dataframe
-                ["Monthly Drawdowns Equity", "Loan with Bank Provision and IDC"],  # Variables to plot
+                [
+                    "Monthly Drawdowns Equity",
+                    "Loan with Bank Provision and IDC",
+                ],  # Variables to plot
                 x_axis_label="Time",  # Custom x-axis label
-                y_axis_label="Amount"  # Custom y-axis label
+                y_axis_label="Amount",  # Custom y-axis label
             )
 
         with st.expander("Loan Amortization Schedule"):
@@ -361,9 +340,13 @@ def create_financial_and_loan_simulation():
 
             plot_bar_chart(
                 loan_df_plot,  # Your dataframe
-                ["Ending Balance", "Principal Payment", "Interest Payment"],  # Variables to plot
+                [
+                    "Ending Balance",
+                    "Principal Payment",
+                    "Interest Payment",
+                ],  # Variables to plot
                 x_axis_label="Time",  # Custom x-axis label
-                y_axis_label="Amount"  # Custom y-axis label
+                y_axis_label="Amount",  # Custom y-axis label
             )
 
         with st.expander(
@@ -400,13 +383,15 @@ def create_financial_and_loan_simulation():
             st.dataframe(financial_df_new.T, use_container_width=True)
 
             financial_df_plot = financial_df_new.copy()
-            financial_df_plot["Operational Cost"] = financial_df_plot["Operational Cost"] * -1
+            financial_df_plot["Operational Cost"] = (
+                financial_df_plot["Operational Cost"] * -1
+            )
 
             plot_bar_chart(
                 financial_df_plot,  # Your dataframe
                 ["Revenue", "Operational Cost"],  # Variables to plot
                 x_axis_label="Time",  # Custom x-axis label
-                y_axis_label="Amount"  # Custom y-axis label
+                y_axis_label="Amount",  # Custom y-axis label
             )
 
         with st.expander("Profit and Loss Table"):
@@ -422,15 +407,22 @@ def create_financial_and_loan_simulation():
             st.dataframe(profit_loss_df_new.T, use_container_width=True)
 
             profit_loss_plot = profit_loss_df_new.copy()
-            profit_loss_plot["Operational Cost"] = -1*profit_loss_plot["Operational Cost"]
-            profit_loss_plot["Depreciation"] = -1*profit_loss_plot["Depreciation"]
-            profit_loss_plot["Financing Cost"] = -1*profit_loss_plot["Financing Cost"]
+            profit_loss_plot["Operational Cost"] = (
+                -1 * profit_loss_plot["Operational Cost"]
+            )
+            profit_loss_plot["Depreciation"] = -1 * profit_loss_plot["Depreciation"]
+            profit_loss_plot["Financing Cost"] = -1 * profit_loss_plot["Financing Cost"]
 
             plot_bar_chart(
                 profit_loss_plot,  # Your dataframe
-                ["Revenue", "Operational Cost", "Depreciation", "Financing Cost"],  # Variables to plot
+                [
+                    "Revenue",
+                    "Operational Cost",
+                    "Depreciation",
+                    "Financing Cost",
+                ],  # Variables to plot
                 x_axis_label="Time",  # Custom x-axis label
-                y_axis_label="Amount"  # Custom y-axis label
+                y_axis_label="Amount",  # Custom y-axis label
             )
 
         with st.expander("Tax Calculation"):
@@ -446,13 +438,19 @@ def create_financial_and_loan_simulation():
             st.dataframe(taxation_df_new.T, use_container_width=True)
 
             taxation_df_plot = taxation_df_new.copy()
-            taxation_df_plot["Income Tax (PPh)"] = taxation_df_plot["Income Tax (PPh)"] * -1
+            taxation_df_plot["Income Tax (PPh)"] = (
+                taxation_df_plot["Income Tax (PPh)"] * -1
+            )
 
             plot_bar_chart(
                 taxation_df_plot,  # Your dataframe
-                ["Fiscal Profit/Loss", "Income Tax (PPh)", "Net Income After Tax"],  # Variables to plot
+                [
+                    "Fiscal Profit/Loss",
+                    "Income Tax (PPh)",
+                    "Net Income After Tax",
+                ],  # Variables to plot
                 x_axis_label="Time",  # Custom x-axis label
-                y_axis_label="Amount"  # Custom y-axis label
+                y_axis_label="Amount",  # Custom y-axis label
             )
 
         (
@@ -472,14 +470,14 @@ def create_financial_and_loan_simulation():
 
         with st.expander("Operational Cashflow"):
             st.dataframe(operational_cashflow_df, use_container_width=True)
-            
+
             operational_cashflow_df_plot = operational_cashflow_df.T.copy()
 
             plot_bar_chart(
                 operational_cashflow_df_plot,  # Your dataframe
                 ["Operational Cash Flow"],  # Variables to plot
                 x_axis_label="Time",  # Custom x-axis label
-                y_axis_label="Amount"  # Custom y-axis label
+                y_axis_label="Amount",  # Custom y-axis label
             )
 
         with st.expander("Investment Cashflow"):
@@ -491,7 +489,7 @@ def create_financial_and_loan_simulation():
                 investment_cashflow_df_plot,  # Your dataframe
                 ["Investment Cash Flow"],  # Variables to plot
                 x_axis_label="Time",  # Custom x-axis label
-                y_axis_label="Amount"  # Custom y-axis label
+                y_axis_label="Amount",  # Custom y-axis label
             )
 
         with st.expander("Financing Cashflow"):
@@ -503,7 +501,7 @@ def create_financial_and_loan_simulation():
                 financing_cashflow_df_plot,  # Your dataframe
                 ["Financing Cash Flow"],  # Variables to plot
                 x_axis_label="Time",  # Custom x-axis label
-                y_axis_label="Amount"  # Custom y-axis label
+                y_axis_label="Amount",  # Custom y-axis label
             )
 
         with st.expander("Cashflow Summary"):
@@ -515,7 +513,7 @@ def create_financial_and_loan_simulation():
                 cashflow_summary_df_plot,  # Your dataframe
                 ["End Balance Cash"],  # Variables to plot
                 x_axis_label="Time",  # Custom x-axis label
-                y_axis_label="Amount"  # Custom y-axis label
+                y_axis_label="Amount",  # Custom y-axis label
             )
 
         assets_df, liabilities_df, equity_df, checking_df = create_balance_sheet(
@@ -538,16 +536,20 @@ def create_financial_and_loan_simulation():
 
         with st.expander("Checking Balance"):
             st.dataframe(checking_df, use_container_width=True)
-            
+
             checking_df_plot = checking_df.T.copy()
             # checking_df_plot["Total Liabilities"] = checking_df_plot["Total Liabilities"] * -1
             # checking_df_plot["Total Equity"] = checking_df_plot["Total Equity"] * -1
 
             plot_bar_chart(
                 checking_df_plot,  # Your dataframe
-                ["Total Assets", "Total Liabilities", "Total Equity"],  # Variables to plot
+                [
+                    "Total Assets",
+                    "Total Liabilities",
+                    "Total Equity",
+                ],  # Variables to plot
                 x_axis_label="Time",  # Custom x-axis label
-                y_axis_label="Amount"  # Custom y-axis label
+                y_axis_label="Amount",  # Custom y-axis label
             )
 
         with st.expander("Project Cashflow and Key Metrics"):
@@ -591,7 +593,9 @@ def create_financial_and_loan_simulation():
                 frequency=timing_frequency,
             )
             if pbp_project is not None:
-                st.write(f"**Project Payback Period:** :orange[{pbp_project:.2f} Years]")
+                st.write(
+                    f"**Project Payback Period:** :orange[{pbp_project:.2f} Years]"
+                )
             else:
                 st.write(f"**Project Not Payback**")
 
@@ -599,7 +603,7 @@ def create_financial_and_loan_simulation():
                 project_cashflow_new,  # Your dataframe
                 ["Project Cashflow"],  # Variables to plot
                 x_axis_label="Time",  # Custom x-axis label
-                y_axis_label="Amount"  # Custom y-axis label
+                y_axis_label="Amount",  # Custom y-axis label
             )
 
         with st.expander("Equity Cashflow and Key Metrics"):
@@ -642,11 +646,8 @@ def create_financial_and_loan_simulation():
                 equity_cashflow_new,  # Your dataframe
                 ["Equity Cashflow"],  # Variables to plot
                 x_axis_label="Time",  # Custom x-axis label
-                y_axis_label="Amount"  # Custom y-axis label
+                y_axis_label="Amount",  # Custom y-axis label
             )
-    else:
-        st.session_state.run_simulation = False
-
 
 
 def project_financing_page():

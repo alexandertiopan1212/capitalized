@@ -7,9 +7,16 @@ from option import option_page
 from debt import debt_page
 from project_financing import project_financing_page
 from portfolio import portfolio_page
+from decision_flow import decision_flow_page
+from project_financing_scenario import scenario_analysis_page
 from administrator import administrator_page
 from guidelines import guidelines_page
 from settings import settings_page
+
+import warnings
+
+# Ignore all warnings
+warnings.filterwarnings("ignore")
 
 # Modular navigation logic
 def set_page_config():
@@ -61,6 +68,14 @@ def route_page():
 
     elif st.session_state.page == "portfolio":
         portfolio_page()
+
+    elif st.session_state.page == "scenario_analysis":
+        scenario_analysis_page()
+
+    elif st.session_state.page == "decision_flow":
+        project_financing_page()
+    #     st.write('on development')
+    #     # decision_flow_page()
 
     elif st.session_state.page == "administrator":
         administrator_page()
