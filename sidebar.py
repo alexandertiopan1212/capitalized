@@ -56,9 +56,9 @@ def render_page_based_on_sidebar():
         if st.button("Portfolio", key="portfolio"):
             st.session_state.page = "portfolio"
 
-    with st.sidebar.expander("Decision Flow"):
-        if st.button("Decision Flow", key="decision_flow"):
-            st.session_state.page = "decision_flow"
+    # with st.sidebar.expander("Decision Flow"):
+    #     if st.button("Decision Flow", key="decision_flow"):
+    #         st.session_state.page = "decision_flow"
 
     with st.sidebar.expander("Help & Settings"):
         if st.button("Administrator", key="administrator"):
