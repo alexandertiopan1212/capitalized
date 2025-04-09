@@ -115,7 +115,10 @@ streamlit run main.py
 
 ## 📸 Sample Screenshots
 
-_Add screenshots of your key pages like Project IRR simulation, Bond cash flow chart, or Monte Carlo payoff histogram here._
+![ss1](https://github.com/user-attachments/assets/7e7e2fd5-9887-4948-a575-c2fdd0f9b5b8)
+![ss2](https://github.com/user-attachments/assets/94ba39b4-2b3b-45a8-a0d5-ad63a4100d70)
+![ss3](https://github.com/user-attachments/assets/9fecdcbf-5c4a-46e7-a1b2-38d232d30e0d)
+![ss4](https://github.com/user-attachments/assets/206295da-4524-457f-9cd2-f82716aeef02)
 
 ---
 
